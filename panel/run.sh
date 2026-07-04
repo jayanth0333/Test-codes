@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# ============================================================
-# JAYANTH HUB — PTERODACTYL PANEL MANAGER
-# ============================================================
 set -e
 
 P='\033[1;38;5;201m'
@@ -61,12 +58,7 @@ while true; do
             rm -f /tmp/lib.sh
             echo -e "\n ${G}✔ Done. Press Enter to return.${NC}"; read -r
             ;;
-        0)
-            exit 0
-            ;;
-        *)
-            echo -e " ${R}✘ Invalid option.${NC}"; sleep 0.8
-            ;;
+        0) exit 0 ;;
+        *) echo -e " ${R}✘ Invalid option.${NC}"; sleep 0.8 ;;
     esac
 done
-
