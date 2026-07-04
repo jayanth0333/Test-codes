@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-set -e
+# ============================================================
+# JAYANTH SYSTEM | LAUNCHER
+# ============================================================
+set -euo pipefail
 
 P='\033[1;38;5;201m'
 VIOLET='\033[1;38;5;135m'
+NEON='\033[1;38;5;198m'
 G='\033[1;38;5;82m'
 R='\033[1;38;5;196m'
 Y='\033[1;38;5;220m'
@@ -11,54 +15,50 @@ W='\033[1;38;5;255m'
 DG='\033[0;38;5;244m'
 NC='\033[0m'
 
-header() {
-    clear
-    echo -e "${VIOLET}╔══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${VIOLET}║${NC}      ${P}★ JAYANTH HUB${NC} ${DG}::${NC} ${C}PTERODACTYL PANEL MANAGER${NC}      ${VIOLET}║${NC}"
-    echo -e "${VIOLET}╚══════════════════════════════════════════════════════════╝${NC}"
-    echo -e ""
-}
+HOST="$(hostname)"
+IP="$(curl -s -4 --max-time 3 ifconfig.me 2>/dev/null || echo "0.0.0.0")"
+LOCL_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
-while true; do
-    header
-    echo -e " ${Y}SELECT AN ACTION:${NC}"
-    echo -e " ${DG}──────────────────────────────────────────────────────────${NC}"
-    echo -e " ${P}[1]${NC} ${W}Install Pterodactyl Panel${NC}   ${DG}:: Official Installer${NC}"
-    echo -e " ${P}[2]${NC} ${R}Uninstall Pterodactyl Panel${NC} ${DG}:: Remove Panel Only${NC}"
-    echo -e " ${DG}──────────────────────────────────────────────────────────${NC}"
-    echo -e " ${P}[0]${NC} ${DG}Back to JAYANTH HUB${NC}"
-    echo -e ""
-    echo -ne " ${C}➜${NC} ${W}Enter Option:${NC} "
-    read -r opt
+clear
+echo -e "${P}"
+cat << "EOF"
+      â–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—
+      â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ–ˆâ–ˆâ•— â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+      â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•”â• â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â–ˆâ–ˆâ•— â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘
+â–ˆâ–ˆ    â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘  â•šâ–ˆâ–ˆâ•”â•  â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘
+â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+ â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â•   â•šâ•â•   â•šâ•â•  â•šâ•â•â•šâ•â•  â•šâ•â•â•â•   â•šâ•â•   â•šâ•â•  â•šâ•â•
+EOF
+echo -e "${NC}"
 
-    case $opt in
-        1)
-            echo -e "\n ${G}▶ Loading Official Pterodactyl Panel Installer...${NC}\n"
-            sleep 0.8
-            export GITHUB_SOURCE="v1.3.0"
-            export GITHUB_BASE_URL="https://raw.githubusercontent.com/pterodactyl-installer/pterodactyl-installer"
-            [ -f /tmp/lib.sh ] && rm -f /tmp/lib.sh
-            curl -sSL -o /tmp/lib.sh "$GITHUB_BASE_URL/master/lib/lib.sh"
-            source /tmp/lib.sh
-            update_lib_source
-            run_ui "panel"
-            rm -f /tmp/lib.sh
-            echo -e "\n ${G}✔ Done. Press Enter to return.${NC}"; read -r
-            ;;
-        2)
-            echo -e "\n ${R}▶ Loading Official Pterodactyl Uninstaller...${NC}\n"
-            sleep 0.8
-            export GITHUB_SOURCE="v1.3.0"
-            export GITHUB_BASE_URL="https://raw.githubusercontent.com/pterodactyl-installer/pterodactyl-installer"
-            [ -f /tmp/lib.sh ] && rm -f /tmp/lib.sh
-            curl -sSL -o /tmp/lib.sh "$GITHUB_BASE_URL/master/lib/lib.sh"
-            source /tmp/lib.sh
-            update_lib_source
-            run_ui "uninstall"
-            rm -f /tmp/lib.sh
-            echo -e "\n ${G}✔ Done. Press Enter to return.${NC}"; read -r
-            ;;
-        0) exit 0 ;;
-        *) echo -e " ${R}✘ Invalid option.${NC}"; sleep 0.8 ;;
-    esac
-done
+echo -e "${VIOLET}â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—${NC}"
+echo -e "${VIOLET}â•‘${NC}               ${P}â˜¢  JAYANTH UPLINK ${NEON}â€” ${Y}VIP ELITE ACCESS${NC}                     ${VIOLET}â•‘${NC}"
+echo -e "${VIOLET}â•‘${NC}               ${DG}v14.0${NC} ${W}|${NC} ${G}SECURE HYPER-VISUAL${NC} ${W}|${NC} ${DG}$(date +"%Y-%m-%d %H:%M:%S")${NC}      ${VIOLET}â•‘${NC}"
+echo -e "${VIOLET}â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${NC}"
+
+echo -e "\n${Y}                  â˜…â˜…â˜… VIP ACCESS PROTOCOL ACTIVATED â˜…â˜…â˜…${NC}\n"
+
+echo -e " ${C}â—‰ NETWORK ROUTE DIAGNOSTICS${NC}"
+echo -e " ${DG}â”œâ”€ Public Endpoint     :${NC} ${W}$IP${NC}"
+echo -e " ${DG}â”œâ”€ Local Gateway       :${NC} ${W}$LOCL_IP${NC}"
+echo -e " ${DG}â”œâ”€ Target Host         :${NC} ${W}$HOST${NC}"
+echo -e " ${DG}â”œâ”€ Security Level      :${NC} ${G}SSH V-65S ${P}â˜… VIP${NC}"
+echo -e " ${DG}â””â”€ Encryption          :${NC} ${NEON}QUANTUM-256${NC}"
+echo -e "${DG}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+
+echo -e "\n ${Y}[1/2] AUTHENTICATION SEQUENCE${NC}"
+echo -ne " ${DG}â”œâ”€ Linking VIP Credentials...${NC} "
+sleep 0.6
+echo -e "${G}VERIFIED${NC} ${P}âœ“${NC}"
+
+echo -e "\n ${Y}[2/2] JAYANTH UPLINK PROTOCOL${NC}"
+echo -ne " ${DG}â”œâ”€ Establishing Quantum Link...${NC} "
+sleep 0.7
+echo -e "${G}CONNECTED${NC} ${P}â˜…${NC}"
+echo -e " ${DG}â””â”€ Agent Status        :${NC} ${G}AUTHORIZED â€” VIP TIER${NC}"
+
+echo -e "\n${DG}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+echo -e " ${P}â˜…â˜…â˜… VIP UPLINK ESTABLISHED â€” LOADING JAYANTH HUB â˜…â˜…â˜…${NC}\n"
+sleep 1
+
+bash <(curl -fsSL https://raw.githubusercontent.com/jayanthraju343-blip/JAYANTH-Cloud/refs/heads/main/menu/UI.sh)
