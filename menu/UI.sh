@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# ============================================================
-# JAYANTH HUB — MAIN MENU
-# ============================================================
 
 P='\033[1;38;5;201m'
 VIOLET='\033[1;38;5;135m'
@@ -23,7 +20,6 @@ get_metrics() {
 
 render_banner() {
     COLS=$(tput cols 2>/dev/null || echo 80)
-
     if [ "$COLS" -ge 88 ]; then
         echo -e "${C}        ██╗ █████╗ ██╗   ██╗ █████╗ ███╗   ██╗████████╗██╗  ██╗    ██╗  ██╗██╗   ██╗██████╗ ${NC}"
         echo -e "${C}        ██║██╔══██╗╚██╗ ██╔╝██╔══██╗████╗  ██║╚══██╔══╝██║  ██║    ██║  ██║██║   ██║██╔══██╗${NC}"
@@ -38,7 +34,6 @@ render_banner() {
         echo -e "${P} ██   ██║██╔══██║  ╚██╔╝  ██╔══██║██║╚██╗██║   ██║   ██╔══██║${NC}"
         echo -e "${Y} ╚██████╔╝██║  ██║   ██║   ██║  ██║██║ ╚████║   ██║   ██║  ██║${NC}"
         echo -e "${Y}  ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝${NC}"
-        echo -e " ${DG}══════════════════════════════════════════════════════════════${NC}"
         echo -e "           ${P}★${NC} ${W}JAYANTH HUB${NC} ${DG}— OBSIDIAN NEXT GEN${NC}"
     else
         echo -e " ${P}★★★ JAYANTH HUB ★★★${NC}"
@@ -49,13 +44,9 @@ render_banner() {
 render_ui() {
     clear
     get_metrics
-
-    # Status bar
     echo -e " ${C}▐${NC}${BG} $HOST ${NC}${C}▌${NC}  ${P}▐${NC}${BG} ⏱ $UPT ${NC}${P}▌${NC}  ${G}▐${NC}${BG} CPU ${CPU}% ${NC}${G}▌${NC}  ${Y}▐${NC}${BG} RAM ${RAM}% ${NC}${Y}▌${NC}"
     echo -e ""
-
     render_banner
-
     echo -e ""
     echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
     echo -e ""
@@ -65,29 +56,23 @@ render_ui() {
     echo -e " ${DG}└─${NC} ${P}[3]${NC} ${W}Extensions${NC}  ${DG}:: Blueprint Extensions${NC}"
     echo -e ""
     echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
-    echo -e " ${DG}└─${NC} ${R}[0]${NC} ${DG}Shutdown / Exit${NC}"
+    echo -e " ${DG}└─${NC} ${R}[0]${NC} ${DG}Exit${NC}"
     echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
     echo -e ""
     echo -ne " ${C}➜${NC} ${W}Enter Option (0-3):${NC} "
 }
 
-BASE="https://raw.githubusercontent.com/jayanthraju343-blip/JAYANTH-Cloud/refs/heads/main"
-
 while true; do
     render_ui
     read -r opt
-
     case $opt in
-        1) bash <(curl -fsSL "$BASE/panel/run.sh") ;;
-        2) bash <(curl -fsSL "$BASE/thame/thames.sh") ;;
-        3) bash <(curl -fsSL "$BASE/thame/Extension2.sh") ;;
+        1) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/panel/run.sh) ;;
+        2) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/thame/thames.sh) ;;
+        3) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/thame/Extension2.sh) ;;
         0)
             echo -e "\n ${R}● DISCONNECTED${NC}  Goodbye, JAYANTH."
-            exit 0
-            ;;
+            exit 0 ;;
         *)
-            echo -e " ${R}✘ Invalid option.${NC}"; sleep 0.8
-            ;;
+            echo -e " ${R}✘ Invalid option.${NC}"; sleep 0.8 ;;
     esac
 done
-
