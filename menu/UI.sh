@@ -51,10 +51,10 @@ render_ui() {
     echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
     echo ""
     echo -e " ${C}◉ SERVICES${NC}"
-    echo -e " ${DG}├─${NC} ${P}[1]${NC} ${W}Panel${NC}       ${DG}:: Pterodactyl Install / Uninstall${NC}"
-    echo -e " ${DG}├─${NC} ${P}[2]${NC} ${W}Themes${NC}      ${DG}:: Blueprint UI Themes${NC}"
-    echo -e " ${DG}├─${NC} ${P}[3]${NC} ${W}Extensions${NC}  ${DG}:: Blueprint Extensions${NC}"
-    echo -e " ${DG}└─${NC} ${P}[4]${NC} ${W}Toolbox${NC}     ${DG}:: Server Tools & Utilities${NC}"
+    echo -e " ${DG}├─${NC} ${P}[1]${NC} ${W}Panel${NC}                ${DG}:: Pterodactyl Install / Uninstall${NC}"
+    echo -e " ${DG}├─${NC} ${P}[2]${NC} ${W}Themes${NC}               ${DG}:: Blueprint UI Themes${NC}"
+    echo -e " ${DG}├─${NC} ${P}[3]${NC} ${W}Blueprint & Extension${NC} ${DG}:: Framework + Extensions${NC}"
+    echo -e " ${DG}└─${NC} ${P}[4]${NC} ${W}Toolbox${NC}              ${DG}:: Server Tools & Utilities${NC}"
     echo ""
     echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
     echo -e " ${DG}└─${NC} ${R}[0]${NC} ${DG}Exit${NC}"
@@ -69,7 +69,7 @@ while true; do
     case $opt in
         1) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/panel/run.sh) ;;
         2) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/thame/thames.sh) ;;
-        3) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/thame/Extension2.sh) ;;
+        3) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/blueprint/run.sh) ;;
         4) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/toolbox/run.sh) ;;
         0)
             echo -e "\n ${R}● DISCONNECTED${NC}  Goodbye, JAYANTH."
