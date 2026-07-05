@@ -119,4 +119,3 @@ while true; do
         *) echo -e " ${R}✘ Invalid option.${NC}"; sleep 0.8 ;;
     esac
 done
-
