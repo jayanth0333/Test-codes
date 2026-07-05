@@ -8,87 +8,86 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
 
-CHECKMARK="✓"
-CROSSMARK="✗"
-ARROW="➤"
-
 print_header() {
     echo -e "\n${MAGENTA}╔══════════════════════════════════════════╗${NC}"
     echo -e "${MAGENTA}║${NC}${CYAN}   $1${NC}"
     echo -e "${MAGENTA}╚══════════════════════════════════════════╝${NC}"
 }
 
-print_status() { echo -e "${YELLOW}${ARROW} $1...${NC}"; }
-print_success() { echo -e "${GREEN}${CHECKMARK} $1${NC}"; }
-print_error() { echo -e "${RED}${CROSSMARK} $1${NC}"; }
+print_status()  { echo -e "${YELLOW}➤ $1...${NC}"; }
+print_success() { echo -e "${GREEN}✓ $1${NC}"; }
+print_error()   { echo -e "${RED}✗ $1${NC}"; }
+
+pause_return() {
+    echo ""
+    read -n 1 -s -r -p "  Press any key to return to JAYANTH HUB..."
+    echo ""
+    exit 0
+}
 
 clear
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║${NC}${CYAN}     PTERODACTYL WINGS INSTALLER     ${NC}${BLUE}║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+echo ""
 
 if [ "$EUID" -ne 0 ]; then
     print_error "Please run as root"
-    exit 1
+    pause_return
 fi
 
-# ------------------------
-# 1. Docker install
-# ------------------------
+# ── 1. Docker ──────────────────────────────────────
 print_header "INSTALLING DOCKER"
-print_status "Installing Docker"
-curl -sSL https://get.docker.com/ | CHANNEL=stable bash
-print_success "Docker installed"
+if command -v docker &>/dev/null; then
+    print_success "Docker already installed — skipping"
+else
+    print_status "Downloading and installing Docker"
+    curl -sSL https://get.docker.com -o /tmp/get-docker.sh
+    sh /tmp/get-docker.sh || true
+    rm -f /tmp/get-docker.sh
+    print_success "Docker installed"
+fi
 
-print_status "Starting Docker service"
-systemctl enable --now docker > /dev/null 2>&1 || true
-print_success "Docker service started"
+print_status "Enabling Docker service"
+systemctl enable --now docker >/dev/null 2>&1 || true
+print_success "Docker service enabled"
 
-# ------------------------
-# 2. Update GRUB (optional — skip if not available)
-# ------------------------
-print_header "UPDATING SYSTEM"
-GRUB_FILE="/etc/default/grub"
-if [ -f "$GRUB_FILE" ]; then
-    print_status "Updating GRUB"
-    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="swapaccount=1"/' "$GRUB_FILE" || true
-    update-grub > /dev/null 2>&1 || true
+# ── 2. GRUB (skip if VPS) ──────────────────────────
+print_header "SYSTEM UPDATE"
+if [ -f "/etc/default/grub" ]; then
+    print_status "Updating GRUB swapaccount"
+    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="swapaccount=1"/' /etc/default/grub || true
+    update-grub >/dev/null 2>&1 || true
     print_success "GRUB updated"
 else
-    print_success "GRUB not present (VPS env) — skipped"
+    print_success "GRUB not found (VPS) — skipped"
 fi
 
-# ------------------------
-# 3. Wings install
-# ------------------------
+# ── 3. Wings binary ───────────────────────────────
 print_header "INSTALLING WINGS"
 print_status "Creating directories"
 mkdir -p /etc/pterodactyl
-print_success "Directories created"
+print_success "Directories ready"
 
-print_status "Detecting architecture"
 ARCH=$(uname -m)
-if [ "$ARCH" == "x86_64" ]; then
-    ARCH="amd64"
-else
-    ARCH="arm64"
+[ "$ARCH" = "x86_64" ] && ARCH="amd64" || ARCH="arm64"
+print_status "Downloading Wings ($ARCH)"
+
+WINGS_URL="https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_${ARCH}"
+curl -L --retry 3 --retry-delay 2 \
+    -o /usr/local/bin/wings \
+    "$WINGS_URL"
+
+if [ ! -s /usr/local/bin/wings ]; then
+    print_error "Wings download failed or file is empty"
+    pause_return
 fi
-print_success "Architecture: $ARCH"
 
-print_status "Downloading Wings"
-curl -L -o /usr/local/bin/wings \
-    "https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_$ARCH"
-print_success "Wings downloaded"
-
-print_status "Setting permissions"
 chmod u+x /usr/local/bin/wings
-print_success "Permissions set"
+print_success "Wings downloaded and permissions set"
 
-# ------------------------
-# 4. Wings service
-# ------------------------
+# ── 4. systemd service ────────────────────────────
 print_header "CONFIGURING SERVICE"
-print_status "Creating service file"
 cat > /etc/systemd/system/wings.service << 'EOF'
 [Unit]
 Description=Pterodactyl Wings Daemon
@@ -110,75 +109,52 @@ RestartSec=5s
 [Install]
 WantedBy=multi-user.target
 EOF
-print_success "Service file created"
 
-print_status "Reloading systemd"
-systemctl daemon-reload > /dev/null 2>&1
-print_success "Systemd reloaded"
+systemctl daemon-reload >/dev/null 2>&1 || true
+systemctl enable wings >/dev/null 2>&1 || true
+print_success "Wings service configured and enabled"
 
-print_status "Enabling service"
-systemctl enable wings > /dev/null 2>&1
-print_success "Service enabled"
-
-# ------------------------
-# 5. SSL Certificate
-# ------------------------
+# ── 5. SSL cert ───────────────────────────────────
 print_header "GENERATING SSL"
-print_status "Creating certificate"
-mkdir -p /etc/certs/wing
-cd /etc/certs/wing || true
+mkdir -p /etc/certs/wing && cd /etc/certs/wing
 openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 \
     -subj "/C=NA/ST=NA/L=NA/O=NA/CN=Generic SSL Certificate" \
-    -keyout privkey.pem -out fullchain.pem > /dev/null 2>&1
+    -keyout privkey.pem -out fullchain.pem >/dev/null 2>&1 || true
 print_success "SSL certificate generated"
 
-# ------------------------
-# 6. 'wing' helper command
-# ------------------------
-print_header "CREATING HELPER COMMAND"
+# ── 6. wing helper ────────────────────────────────
+print_header "HELPER COMMAND"
 cat > /usr/local/bin/wing << 'EOF'
 #!/bin/bash
-echo -e "\033[1;33mℹ️  Wings Helper Command\033[0m"
-echo -e "\033[1;36mTo start Wings, run:\033[0m"
-echo -e "    \033[1;32msudo systemctl start wings\033[0m"
-echo -e "\033[1;36mTo check Wings status:\033[0m"
-echo -e "    \033[1;32msudo systemctl status wings\033[0m"
-echo -e "\033[1;36mTo view Wings logs:\033[0m"
-echo -e "    \033[1;32msudo journalctl -u wings -f\033[0m"
-echo -e "\033[1;33m⚠️  Make sure Node port 8080 → 443 is mapped.\033[0m"
+echo -e "\033[1;33mℹ️  Wings Helper\033[0m"
+echo -e "\033[1;36mStart:\033[0m    \033[1;32msudo systemctl start wings\033[0m"
+echo -e "\033[1;36mStatus:\033[0m   \033[1;32msudo systemctl status wings\033[0m"
+echo -e "\033[1;36mLogs:\033[0m     \033[1;32msudo journalctl -u wings -f\033[0m"
 EOF
 chmod +x /usr/local/bin/wing
-print_success "Helper command created"
+print_success "Helper command 'wing' created"
 
-# ------------------------
-# Installation Complete
-# ------------------------
+# ── 7. Done ───────────────────────────────────────
 print_header "INSTALLATION COMPLETE"
-echo -e "${GREEN}🎉 Wings has been successfully installed!${NC}"
-echo -e ""
+echo -e "${GREEN}🎉 Wings installed successfully!${NC}"
+echo ""
 echo -e "${YELLOW}📋 NEXT STEPS:${NC}"
-echo -e "  ${CYAN}1.${NC} Configure Wings with your panel details"
-echo -e "  ${CYAN}2.${NC} Start Wings service: ${GREEN}sudo systemctl start wings${NC}"
-echo -e "  ${CYAN}3.${NC} Use the helper command: ${GREEN}wing${NC}"
-echo -e ""
+echo -e "  ${CYAN}1.${NC} Configure Wings from your panel (Nodes → Deploy)"
+echo -e "  ${CYAN}2.${NC} Paste the config into: ${GREEN}/etc/pterodactyl/config.yml${NC}"
+echo -e "  ${CYAN}3.${NC} Start Wings: ${GREEN}systemctl start wings${NC}"
+echo ""
 
-# ------------------------
-# 7. Optional Auto-configure
-# ------------------------
-echo -e "${YELLOW}🔧 AUTO-CONFIGURATION${NC}"
-read -p "$(echo -e "${YELLOW}Do you want to auto-configure Wings now? (y/N): ${NC}")" AUTO_CONFIG
-
+# ── 8. Auto-configure ─────────────────────────────
+read -p "$(echo -e "${YELLOW}Auto-configure Wings now? (y/N): ${NC}")" AUTO_CONFIG
 if [[ "$AUTO_CONFIG" =~ ^[Yy]$ ]]; then
     print_header "AUTO-CONFIGURING WINGS"
-    echo -e "${YELLOW}Please provide the following details from your Pterodactyl panel:${NC}"
+    echo -e "${YELLOW}Get these values from your panel → Nodes → Deploy:${NC}"
     echo ""
-    read -p "$(echo -e "${CYAN}Enter UUID: ${NC}")" UUID
-    read -p "$(echo -e "${CYAN}Enter Token ID: ${NC}")" TOKEN_ID
-    read -p "$(echo -e "${CYAN}Enter Token: ${NC}")" TOKEN
-    read -p "$(echo -e "${CYAN}Enter Panel URL (e.g., https://panel.example.com): ${NC}")" REMOTE
+    read -p "$(echo -e "${CYAN}UUID: ${NC}")" UUID
+    read -p "$(echo -e "${CYAN}Token ID: ${NC}")" TOKEN_ID
+    read -p "$(echo -e "${CYAN}Token: ${NC}")" TOKEN
+    read -p "$(echo -e "${CYAN}Panel URL (https://...): ${NC}")" REMOTE
 
-    print_status "Creating Wings configuration"
-    mkdir -p /etc/pterodactyl
     cat > /etc/pterodactyl/config.yml << CFG
 debug: false
 uuid: ${UUID}
@@ -199,25 +175,20 @@ system:
 allowed_mounts: []
 remote: '${REMOTE}'
 CFG
-    print_success "Configuration saved to /etc/pterodactyl/config.yml"
+    print_success "Config saved to /etc/pterodactyl/config.yml"
 
-    print_status "Starting Wings service"
     systemctl start wings
     print_success "Wings service started"
-
-    echo -e ""
-    echo -e "${GREEN}✅ Wings auto-configuration completed!${NC}"
-    echo -e "${YELLOW}Check status:${NC} ${GREEN}systemctl status wings${NC}"
-    echo -e "${YELLOW}View logs:${NC} ${GREEN}journalctl -u wings -f${NC}"
+    echo ""
+    echo -e "${GREEN}✅ Wings is running!${NC}"
+    echo -e "${YELLOW}Logs:${NC} ${GREEN}journalctl -u wings -f${NC}"
 else
-    echo -e "${YELLOW}⚠️  Auto-configuration skipped.${NC}"
-    echo -e "${YELLOW}To configure manually, edit:${NC} ${GREEN}/etc/pterodactyl/config.yml${NC}"
+    echo -e "${YELLOW}Skipped. Configure manually:${NC} ${GREEN}/etc/pterodactyl/config.yml${NC}"
 fi
 
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${CYAN}           Thank you for using JAYANTH-hosting!   ${NC}"
+echo -e "${CYAN}        Thank you for using JAYANTH-hosting!       ${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-read -n 1 -s -r -p "Press any key to return to JAYANTH HUB..."
-
+pause_return
