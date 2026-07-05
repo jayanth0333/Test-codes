@@ -1,221 +1,70 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# 🎨 Colors
-RED="\e[31m"
-GREEN="\e[32m"
-YELLOW="\e[33m"
-CYAN="\e[36m"
-MAGENTA="\e[35m"
-RESET="\e[0m"
+P='\033[1;38;5;201m'
+VIOLET='\033[1;38;5;135m'
+G='\033[1;38;5;82m'
+R='\033[1;38;5;196m'
+Y='\033[1;38;5;220m'
+C='\033[1;38;5;51m'
+W='\033[1;38;5;255m'
+DG='\033[0;38;5;244m'
+NC='\033[0m'
 
-draw_box() {
-    echo -e "${CYAN}╔══════════════════════════════╗${RESET}"
-    echo -e "${CYAN}║${MAGENTA}      CONTROL PANEL UI      ${CYAN}║${RESET}"
-    echo -e "${CYAN}╚══════════════════════════════╝${RESET}"
-}
-
-pause() {
-    echo ""
-    read -p "   Press Enter to continue..." dummy
-}
-
-status_msg() {
-    local type="$1"
-    local msg="$2"
-    case "$type" in
-        INFO)  echo -e "${CYAN}[INFO]${RESET} $msg" ;;
-        OK)    echo -e "${GREEN}[OK]${RESET} $msg" ;;
-        ERROR) echo -e "${RED}[ERROR]${RESET} $msg" ;;
-        *)     echo "$msg" ;;
-    esac
-}
+BASE="https://raw.githubusercontent.com/jayanth0333/Test-codes/main"
 
 while true; do
     clear
-
-    # Check install every loop (fix)
-    if command -v blueprint >/dev/null 2>&1; then
-        status="${GREEN}● ONLINE${RESET}"
-        installed=true
-    else
-        status="${RED}● OFFLINE${RESET}"
-        installed=false
-    fi
-
-    draw_box
+    echo -e "${VIOLET}╔══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${VIOLET}║${NC}         ${P}★ JAYANTH HUB${NC} ${DG}::${NC} ${C}THEMES${NC}                   ${VIOLET}║${NC}"
+    echo -e "${VIOLET}╚══════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "   Blueprint Status : $status"
+    echo -e " ${Y}SELECT THEME TYPE:${NC}"
+    echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
+    echo -e " ${P}[1]${NC} ${W}Blueprint Themes${NC}  ${DG}:: Select & Install Blueprint UI Themes${NC}"
+    echo -e " ${P}[2]${NC} ${W}Hyper Theme${NC}       ${DG}:: DGEN HyperV1 Theme Installer${NC}"
+    echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
+    echo -e " ${R}[0]${NC} ${DG}Back${NC}"
+    echo -e " ${DG}────────────────────────────────────────────────────────────${NC}"
     echo ""
-    echo -e "   ${YELLOW}[1]${RESET} Blueprint"
-    echo -e "   ${YELLOW}[2]${RESET} Theme"
-    echo -e "   ${YELLOW}[3]${RESET} Extensions"
-    echo -e "   ${YELLOW}[4]${RESET} Hyper V1 🚀"
-    echo ""
-    echo -e "   ${RED}[0] Exit${RESET}"
-    echo ""
+    echo -ne " ${C}➜${NC} ${W}Enter Option (0-2):${NC} "
+    read -r opt
 
-    read -p "   ➤ Select Option : " main
-
-    case $main in
-        1)
-            while true; do
-                clear
-
-                # Re-check inside submenu (important fix)
-                if command -v blueprint >/dev/null 2>&1; then
-                    status="${GREEN}● ONLINE${RESET}"
-                    installed=true
-                else
-                    status="${RED}● OFFLINE${RESET}"
-                    installed=false
-                fi
-
-                draw_box
-                echo ""
-                echo -e "   ${CYAN}BLUEPRINT PANEL${RESET}"
-                echo -e "   Status : $status"
-                echo ""
-
-                if [ "$installed" = false ]; then
-                    echo -e "   ${GREEN}[1] Install${RESET}"
-                    echo -e "   ${RED}[0] Back${RESET}"
-                else
-                    echo -e "   ${GREEN}[1] Reinstall${RESET}"
-                    echo -e "   ${GREEN}[2] Update${RESET}"
-                    echo -e "   ${GREEN}[3] Info${RESET}"
-                    echo -e "   ${GREEN}[4] Version${RESET}"
-                    echo -e "   ${RED}[5] Uninstall${RESET}"
-                    echo -e "   ${RED}[0] Back${RESET}"
-                fi
-
-                echo ""
-                read -p "   ➤ Select : " bp
-
-                case $bp in
-                    1)
-                        if [ "$installed" = false ]; then
-                            echo -e "${CYAN}Installing...${RESET}"
-                            rm -f /etc/apt/keyrings/nodesource.gpg 2>/dev/null
-                            yes | bash <(curl -s https://raw.githubusercontent.com/jayanthraju343-blip/JAYANTH-Cloud/refs/heads/main/thame/install.sh)
-                        else
-                            yes | blueprint -rerun-install
-                        fi
-                        pause
-                        ;;
-                    2)
-                        yes | blueprint -upgrade
-                        pause
-                        ;;
-                    3)
-                        blueprint -info
-                        pause
-                        ;;
-                    4)
-                        blueprint -version
-                        pause
-                        ;;
-                    5)
-                        echo -e "${RED}Uninstalling Blueprint Framework + Extensions...${RESET}"
-                        path=$(which blueprint 2>/dev/null)
-
-                        if [ -n "$path" ]; then
-                            # Stop services
-                            systemctl stop pterodactyl-queue 2>/dev/null || true
-
-                            # Remove blueprint binary
-                            rm -f "$path"
-
-                            # Remove all blueprint data (framework + extensions)
-                            rm -rf ~/.blueprint
-                            rm -rf ~/.config/blueprint
-                            rm -rf /var/www/pterodactyl/.blueprint
-
-                            # Remove extensions from pterodactyl
-                            rm -rf /var/www/pterodactyl/app/BlueprintFramework
-                            rm -rf /var/www/pterodactyl/app/BlueprintFramework/*
-                            rm -rf /var/www/pterodactyl/extensions
-                            rm -rf /var/www/pterodactyl/extensions/*
-
-                            # Purge blueprint config and service files
-                            rm -rf /etc/blueprint
-                            rm -f /etc/systemd/system/blueprint* 2>/dev/null
-                            rm -f /etc/systemd/system/pteroq.service 2>/dev/null
-
-                            # Restore any backup views if they exist
-                            if [ -f /var/www/pterodactyl/blueprint.backup.tar.gz ]; then
-                                echo -e "${YELLOW}Restoring backup...${RESET}"
-                                rm -f /var/www/pterodactyl/blueprint.backup.tar.gz
-                            fi
-
-                            # Final cleanup of extension database entries
-                            if command -v mysql >/dev/null 2>&1; then
-                                echo -e "${YELLOW}Cleaning database...${RESET}"
-                                mysql -e "DROP TABLE IF EXISTS pterodactyl.blueprint_extensions;" 2>/dev/null || true
-                            fi
-
-                            systemctl daemon-reload 2>/dev/null || true
-
-                            echo -e "${GREEN}Fully uninstalled (Framework + Extensions) ✔${RESET}"
-                        else
-                            echo -e "${RED}Not installed ❌${RESET}"
-                        fi
-                        pause
-                        ;;
-                    0)
-                        break
-                        ;;
-                    *)
-                        echo -e "${RED}Invalid option${RESET}"
-                        sleep 1
-                        ;;
-                esac
-            done
-            ;;
-
+    case $opt in
+        1) bash <(curl -fsSL "$BASE/thame/thames.sh") ;;
         2)
             clear
-            draw_box
+            echo -e "${VIOLET}╔══════════════════════════════════════════════════════════╗${NC}"
+            echo -e "${VIOLET}║${NC}              ${P}★ HYPER THEME INSTALLER${NC}                ${VIOLET}║${NC}"
+            echo -e "${VIOLET}╚══════════════════════════════════════════════════════════╝${NC}"
             echo ""
-            echo -e "${CYAN}Launching Theme...${RESET}"
-            bash <(curl -s https://raw.githubusercontent.com/jayanthraju343-blip/JAYANTH-Cloud/refs/heads/main/thame/thames.sh)
-            pause
-            ;;
-
-        3)
-            clear
-            draw_box
+            echo -e " ${Y}⚠  This is a commercial theme by DGEN.${NC}"
+            echo -e " ${DG}   Requires a valid HyperV1 license to complete install.${NC}"
+            echo -e " ${DG}   Binary is downloaded directly from DGEN servers.${NC}"
             echo ""
-            echo -e "${CYAN}Launching Extensions...${RESET}"
-            bash <(curl -s https://raw.githubusercontent.com/jayanthraju343-blip/JAYANTH-Cloud/refs/heads/main/thame/Extension2.sh)
-            pause
+            echo -ne " ${C}➜${NC} ${W}Proceed? (y/n):${NC} "
+            read -r yn
+            if [[ "$yn" == "y" || "$yn" == "Y" ]]; then
+                echo -e "\n ${Y}[1/3] Navigating to Pterodactyl directory...${NC}"
+                cd /var/www/pterodactyl 2>/dev/null || {
+                    echo -e " ${R}✘ /var/www/pterodactyl not found. Install panel first!${NC}"
+                    sleep 2; continue
+                }
+                echo -e " ${Y}[2/3] Downloading Hyper utility...${NC}"
+                wget https://hyper-r2.dgenx.net/hyperv1/hyper-utility
+                chmod +x hyper-utility
+                echo -e " ${Y}[3/3] Running Hyper installer...${NC}"
+                ./hyper-utility
+                echo ""
+                echo -e " ${Y}Applying migrations...${NC}"
+                chmod 644 /var/www/pterodactyl/database/migrations/*.php
+                cd /var/www/pterodactyl
+                php artisan migrate --step --force
+                echo ""
+                echo -e " ${G}✔ Done! Press any key to return.${NC}"
+                read -n 1 -s -r
+            fi
             ;;
-
-        4)
-            clear
-            draw_box
-            echo ""
-            echo -e "${MAGENTA}Launching Hyper V1...${RESET}"
-            wget -O installer.sh https://r2.rolexdev.tech/hyperv1/installer.sh
-            chmod +x installer.sh
-            sudo ./installer.sh
-            rm installer.sh
-            cd /var/www/pterodactyl
-            php artisan view:clear
-            php artisan config:clear
-            chown -R www-data:www-data /var/www/pterodactyl/*
-            php artisan queue:restart
-            pause
-            ;;
-
-        0)
-            clear
-            echo -e "${RED}Exiting...${RESET}"
-            exit
-            ;;
-
-        *)
-            echo -e "${RED}Invalid option${RESET}"
-            sleep 1
-            ;;
+        0) exit 0 ;;
+        *) echo -e " ${R}✘ Invalid option.${NC}"; sleep 0.8 ;;
     esac
 done
