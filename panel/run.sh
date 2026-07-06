@@ -65,13 +65,35 @@ install_panel() {
     # ── 2. Packages ───────────────────────────────────
     print_header "INSTALLING PACKAGES"
     apt-get update -y >/dev/null 2>&1
-    apt-get install -y \
-        curl wget tar unzip git gnupg2 lsb-release ca-certificates \
-        mariadb-server mariadb-client \
-        nginx supervisor \
-        software-properties-common apt-transport-https \
-        redis-server >/dev/null 2>&1
-    print_ok "Base packages installed"
+
+    print_step "Installing base tools..."
+    apt-get install -y curl wget tar unzip git gnupg2 lsb-release \
+        ca-certificates software-properties-common \
+        apt-transport-https >/dev/null 2>&1
+    print_ok "Base tools installed"
+
+    print_step "Installing MariaDB..."
+    apt-get install -y mariadb-server mariadb-client >/dev/null 2>&1 || \
+    apt-get install -y default-mysql-server default-mysql-client >/dev/null 2>&1 || true
+    print_ok "MariaDB installed"
+
+    print_step "Installing Redis..."
+    apt-get install -y redis-server >/dev/null 2>&1
+    print_ok "Redis installed"
+
+    print_step "Installing Nginx..."
+    apt-get install -y nginx >/dev/null 2>&1 || \
+    apt-get install -y nginx-core >/dev/null 2>&1 || true
+    if ! command -v nginx >/dev/null 2>&1; then
+        print_err "Nginx not found — retrying with fix-missing..."
+        apt-get install -y --fix-missing nginx 2>&1 | tail -5
+    else
+        print_ok "Nginx installed"
+    fi
+
+    print_step "Installing Supervisor..."
+    apt-get install -y supervisor >/dev/null 2>&1
+    print_ok "Supervisor installed"
 
     # PHP 8.3
     print_step "Adding PHP 8.3..."
