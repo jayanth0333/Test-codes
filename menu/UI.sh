@@ -69,7 +69,7 @@ while true; do
     read -r opt
     case $opt in
         1) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/panel/run.sh) ;;
-        2) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/wings/install.sh) ;;
+        2) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/wings/run.sh) ;;
         3) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/thame/run.sh) ;;
         4) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/blueprint/run.sh) ;;
         5) bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/main/toolbox/run.sh) ;;
