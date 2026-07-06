@@ -6,6 +6,7 @@ P='\033[1;38;5;201m'; VIOLET='\033[1;38;5;135m'; DG='\033[0;38;5;244m'
 NC='\033[0m'
 
 tty_read() { read "$@" < /dev/tty; }
+
 print_header() {
     echo -e "\n${MAGENTA}╔══════════════════════════════════════════╗${NC}"
     echo -e "${MAGENTA}║${NC} ${CYAN}  $1${NC}"
@@ -13,11 +14,14 @@ print_header() {
 }
 print_step() { echo -e "${YELLOW}➤ $1${NC}"; }
 print_ok()   { echo -e "${GREEN}✓ $1${NC}"; }
-print_err()  { echo -e "${RED}✗ $1 — continuing...${NC}"; }
+print_err()  { echo -e "${RED}✗ $1${NC}"; }
 pause_return() {
     echo ""; tty_read -n 1 -s -r -p "  Press any key to return..."; echo ""; exit 0
 }
 
+# ════════════════════════════════════════════════════
+# INSTALL
+# ════════════════════════════════════════════════════
 install_panel() {
     clear
     echo -e "${VIOLET}╔══════════════════════════════════════════════════════════╗${NC}"
@@ -26,59 +30,56 @@ install_panel() {
     echo ""
     [ "$EUID" -ne 0 ] && { print_err "Run as root!"; pause_return; }
 
-    # ── Collect info ──────────────────────────────────────
+    # ── Config ───────────────────────────────────────
     print_header "CONFIGURATION"
-
-    # Auto-detect: if input has letters+dots → domain, else IP
     tty_read -p "$(echo -e "${CYAN}Enter your Domain or IP address: ${NC}")" FQDN
     if [[ "$FQDN" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        USE_SSL="no"
-        PANEL_URL="http://$FQDN"
-        echo -e "${GREEN}Mode: IP (no SSL)${NC}"
+        USE_SSL="no"; PANEL_URL="http://$FQDN"
+        echo -e "${GREEN}Mode: IP — no SSL${NC}"
     else
-        USE_SSL="yes"
-        PANEL_URL="https://$FQDN"
+        USE_SSL="yes"; PANEL_URL="https://$FQDN"
         echo -e "${GREEN}Mode: Domain + SSL${NC}"
     fi
 
-    tty_read -p "$(echo -e "${CYAN}Database name [panel]: ${NC}")"        DB_NAME;   DB_NAME=${DB_NAME:-panel}
-    tty_read -p "$(echo -e "${CYAN}Database username [pterodactyl]: ${NC}")" DB_USER; DB_USER=${DB_USER:-pterodactyl}
+    tty_read -p "$(echo -e "${CYAN}Database name [panel]: ${NC}")"           DB_NAME;     DB_NAME=${DB_NAME:-panel}
+    tty_read -p "$(echo -e "${CYAN}Database username [pterodactyl]: ${NC}")" DB_USER;     DB_USER=${DB_USER:-pterodactyl}
     DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-    echo -e "${YELLOW}Auto DB password: ${GREEN}$DB_PASS${NC}"
-    tty_read -p "$(echo -e "${CYAN}Admin email: ${NC}")"                   ADMIN_EMAIL
-    tty_read -p "$(echo -e "${CYAN}Admin username [admin]: ${NC}")"        ADMIN_USER;   ADMIN_USER=${ADMIN_USER:-admin}
-    tty_read -p "$(echo -e "${CYAN}Admin first name [Admin]: ${NC}")"      ADMIN_FNAME;  ADMIN_FNAME=${ADMIN_FNAME:-Admin}
-    tty_read -p "$(echo -e "${CYAN}Admin last name [User]: ${NC}")"        ADMIN_LNAME;  ADMIN_LNAME=${ADMIN_LNAME:-User}
-    tty_read -s -p "$(echo -e "${CYAN}Admin password: ${NC}")"            ADMIN_PASS; echo ""
-    tty_read -p "$(echo -e "${CYAN}Timezone [Asia/Kolkata]: ${NC}")"       TIMEZONE;     TIMEZONE=${TIMEZONE:-Asia/Kolkata}
+    echo -e "${YELLOW}Auto DB password: ${GREEN}$DB_PASS ${YELLOW}(save this!)${NC}"
+    tty_read -p "$(echo -e "${CYAN}Admin email: ${NC}")"                     ADMIN_EMAIL
+    tty_read -p "$(echo -e "${CYAN}Admin username [admin]: ${NC}")"          ADMIN_USER;  ADMIN_USER=${ADMIN_USER:-admin}
+    tty_read -p "$(echo -e "${CYAN}Admin first name [Admin]: ${NC}")"        ADMIN_FNAME; ADMIN_FNAME=${ADMIN_FNAME:-Admin}
+    tty_read -p "$(echo -e "${CYAN}Admin last name [User]: ${NC}")"          ADMIN_LNAME; ADMIN_LNAME=${ADMIN_LNAME:-User}
+    tty_read -s -p "$(echo -e "${CYAN}Admin password (min 8 chars): ${NC}")" ADMIN_PASS; echo ""
+    tty_read -p "$(echo -e "${CYAN}Timezone [Asia/Kolkata]: ${NC}")"         TIMEZONE;    TIMEZONE=${TIMEZONE:-Asia/Kolkata}
 
     echo -e "\n${YELLOW}Starting installation...${NC}\n"
-
     export DEBIAN_FRONTEND=noninteractive
 
-    # ── 1. Ports ──────────────────────────────────────────
+    # ── 1. Ports ─────────────────────────────────────
     print_header "OPENING PORTS"
     apt-get install -y ufw >/dev/null 2>&1 || true
-    for port in 22 80 443 8080 2022; do ufw allow $port/tcp >/dev/null 2>&1 || true; done
+    for p in 22 80 443 8080 2022; do ufw allow $p/tcp >/dev/null 2>&1 || true; done
     echo "y" | ufw enable >/dev/null 2>&1 || true
     print_ok "Ports 22, 80, 443, 8080, 2022 opened"
 
-    # ── 2. Packages ───────────────────────────────────────
+    # ── 2. Packages ───────────────────────────────────
     print_header "INSTALLING PACKAGES"
     apt-get update -y >/dev/null 2>&1
     apt-get install -y \
         curl wget tar unzip git gnupg2 lsb-release ca-certificates \
         mariadb-server mariadb-client \
-        nginx supervisor redis-server \
-        software-properties-common apt-transport-https >/dev/null 2>&1
-    print_ok "Base packages + mariadb-client installed"
+        nginx supervisor \
+        software-properties-common apt-transport-https \
+        redis-server >/dev/null 2>&1
+    print_ok "Base packages installed"
 
     # PHP 8.3
-    print_step "Adding PHP 8.3 repository..."
+    print_step "Adding PHP 8.3..."
     curl -sSL https://packages.sury.org/php/README.txt | bash - >/dev/null 2>&1 || \
-    { curl -sSL https://packages.sury.org/php/apt.gpg | gpg --dearmor \
-        -o /usr/share/keyrings/sury-php.gpg >/dev/null 2>&1
-      echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" \
+    { curl -sSL https://packages.sury.org/php/apt.gpg | \
+        gpg --dearmor -o /usr/share/keyrings/sury-php.gpg >/dev/null 2>&1
+      echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] \
+https://packages.sury.org/php/ $(lsb_release -sc) main" \
         > /etc/apt/sources.list.d/sury-php.list
       apt-get update -y >/dev/null 2>&1; } || true
     apt-get install -y \
@@ -88,19 +89,46 @@ install_panel() {
         >/dev/null 2>&1
     print_ok "PHP 8.3 installed"
 
-    # Composer (php method — no curl binary needed)
+    # Composer via PHP (no curl binary)
     print_step "Installing Composer..."
     php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');" 2>/dev/null
     php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer \
         --quiet >/dev/null 2>&1
     rm -f /tmp/composer-setup.php
-    command -v composer >/dev/null 2>&1 && print_ok "Composer installed" \
-        || print_err "Composer install failed"
+    print_ok "Composer installed"
 
-    # ── 3. Database ───────────────────────────────────────
-    print_header "SETTING UP DATABASE"
-    systemctl enable --now mariadb >/dev/null 2>&1 || true
+    # ── 3. Start Services FIRST ───────────────────────
+    print_header "STARTING SERVICES"
+
+    # Redis
+    systemctl enable --now redis-server >/dev/null 2>&1 || true
     sleep 1
+    if redis-cli ping >/dev/null 2>&1; then
+        print_ok "Redis running"
+    else
+        print_err "Redis not responding — trying restart"
+        systemctl restart redis-server >/dev/null 2>&1 || true
+        sleep 2
+    fi
+
+    # MariaDB
+    systemctl enable --now mariadb >/dev/null 2>&1 || true
+    sleep 2
+    if mysql -u root -e "SELECT 1" >/dev/null 2>&1; then
+        print_ok "MariaDB running"
+    else
+        print_err "MariaDB not responding — trying restart"
+        systemctl restart mariadb >/dev/null 2>&1 || true
+        sleep 3
+    fi
+
+    # PHP-FPM
+    systemctl enable --now php8.3-fpm >/dev/null 2>&1 || true
+    sleep 1
+    print_ok "PHP-FPM running"
+
+    # ── 4. Database ───────────────────────────────────
+    print_header "SETTING UP DATABASE"
     mysql -u root << SQL 2>/dev/null
 DROP DATABASE IF EXISTS \`${DB_NAME}\`;
 DROP USER IF EXISTS '${DB_USER}'@'127.0.0.1';
@@ -109,9 +137,9 @@ CREATE USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS}';
 GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
-    print_ok "Database '$DB_NAME' ready (clean slate)"
+    print_ok "Database '$DB_NAME' ready"
 
-    # ── 4. Panel files ────────────────────────────────────
+    # ── 5. Panel files ────────────────────────────────
     print_header "DOWNLOADING PANEL"
     rm -rf /var/www/pterodactyl
     mkdir -p /var/www/pterodactyl
@@ -120,18 +148,20 @@ SQL
         "https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz" \
         2>/dev/null
     tar -xzf panel.tar.gz >/dev/null 2>&1
-    chmod -R 755 storage/* bootstrap/cache/
     rm -f panel.tar.gz
     print_ok "Panel files extracted"
 
-    # ── 5. Composer install ───────────────────────────────
+    # ── 6. Permissions (before composer) ─────────────
+    chmod -R 755 storage/* bootstrap/cache/ 2>/dev/null || true
+
+    # ── 7. Composer ───────────────────────────────────
     print_header "INSTALLING DEPENDENCIES"
     COMPOSER_ALLOW_SUPERUSER=1 composer install \
         --no-dev --optimize-autoloader --no-interaction \
         >/dev/null 2>&1
     print_ok "Composer dependencies installed"
 
-    # ── 6. .env (direct write) ────────────────────────────
+    # ── 8. .env (direct write — no interactive prompts)
     print_header "CONFIGURING .ENV"
     cp .env.example .env
     php artisan key:generate --force --no-interaction >/dev/null 2>&1
@@ -146,7 +176,8 @@ SQL
     sed -i "s|SESSION_DRIVER=.*|SESSION_DRIVER=database|"     .env
     sed -i "s|QUEUE_CONNECTION=.*|QUEUE_CONNECTION=database|" .env
     sed -i "s|REDIS_HOST=.*|REDIS_HOST=127.0.0.1|"            .env
-    # Save config for uninstall
+
+    # Save for uninstall
     cat > /etc/pterodactyl-jayanth.conf << CONF
 FQDN=${FQDN}
 DB_NAME=${DB_NAME}
@@ -155,26 +186,33 @@ USE_SSL=${USE_SSL}
 CONF
     print_ok ".env configured"
 
-    # ── 7. Migrate ────────────────────────────────────────
+    # ── 9. Migrations ─────────────────────────────────
     print_header "RUNNING MIGRATIONS"
-    systemctl enable --now redis-server >/dev/null 2>&1 || true
     php artisan migrate --seed --force --no-interaction >/dev/null 2>&1
     print_ok "Database migrated"
+
     php artisan p:user:make \
         --email="$ADMIN_EMAIL" --username="$ADMIN_USER" \
         --name-first="$ADMIN_FNAME" --name-last="$ADMIN_LNAME" \
         --password="$ADMIN_PASS" --admin=1 --no-interaction \
         >/dev/null 2>&1 || true
     print_ok "Admin user created"
-    chown -R www-data:www-data /var/www/pterodactyl/* >/dev/null 2>&1
 
-    # ── 8. Cron ───────────────────────────────────────────
+    # ── 10. Fix ALL permissions ───────────────────────
+    # Must run AFTER all artisan commands (they create root-owned cache files)
+    print_header "FIXING PERMISSIONS"
+    chown -R www-data:www-data /var/www/pterodactyl
+    chmod -R 755 /var/www/pterodactyl/storage
+    chmod -R 755 /var/www/pterodactyl/bootstrap/cache
+    print_ok "Permissions set to www-data"
+
+    # ── 11. Cron ──────────────────────────────────────
     (crontab -l 2>/dev/null | grep -v "pterodactyl"; \
      echo "* * * * * php /var/www/pterodactyl/artisan schedule:run >> /dev/null 2>&1") \
         | crontab - 2>/dev/null || true
     print_ok "Cron job added"
 
-    # ── 9. Supervisor ─────────────────────────────────────
+    # ── 12. Queue worker ──────────────────────────────
     print_header "QUEUE WORKER"
     mkdir -p /etc/supervisor/conf.d
     cat > /etc/supervisor/conf.d/pterodactyl-worker.conf << 'EOF'
@@ -196,17 +234,20 @@ EOF
     supervisorctl update >/dev/null 2>&1 || true
     print_ok "Queue worker configured"
 
-    # ── 10. Nginx ─────────────────────────────────────────
+    # ── 13. Nginx ─────────────────────────────────────
     print_header "CONFIGURING NGINX"
-    mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
-    # Ensure nginx.conf includes sites-enabled
-    if ! grep -q "sites-enabled" /etc/nginx/nginx.conf 2>/dev/null; then
-        sed -i '/http {/a\\tinclude /etc/nginx/sites-enabled/*;' \
-            /etc/nginx/nginx.conf 2>/dev/null || true
-    fi
-    rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+    # Auto-detect PHP socket
+    PHP_SOCK=$(find /run/php/ -name "php*fpm.sock" 2>/dev/null | head -1)
+    [ -z "$PHP_SOCK" ] && PHP_SOCK="/run/php/php8.3-fpm.sock"
 
-    cat > /etc/nginx/sites-available/pterodactyl.conf << NGINX
+    # Remove conflicting defaults
+    rm -f /etc/nginx/sites-enabled/default \
+          /etc/nginx/conf.d/default.conf \
+          /etc/nginx/sites-available/default 2>/dev/null || true
+
+    # Use conf.d — works on all Debian/Ubuntu nginx versions
+    mkdir -p /etc/nginx/conf.d
+    cat > /etc/nginx/conf.d/pterodactyl.conf << NGINX
 server {
     listen 80;
     server_name ${FQDN};
@@ -223,7 +264,7 @@ server {
     sendfile off;
     location ~ \.php$ {
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:${PHP_SOCK};
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param PHP_VALUE "upload_max_filesize=100M \n post_max_size=100M";
@@ -233,35 +274,38 @@ server {
     location ~ /\.ht { deny all; }
 }
 NGINX
-    ln -sf /etc/nginx/sites-available/pterodactyl.conf \
-           /etc/nginx/sites-enabled/pterodactyl.conf
-    systemctl enable --now php8.3-fpm >/dev/null 2>&1 || true
-    nginx -t >/dev/null 2>&1 \
-        && systemctl restart nginx >/dev/null 2>&1 \
-        || print_err "Nginx config test failed"
-    print_ok "Nginx configured"
+    if nginx -t >/dev/null 2>&1; then
+        systemctl restart nginx >/dev/null 2>&1
+        print_ok "Nginx configured and running"
+    else
+        echo -e "${RED}Nginx error:${NC}"
+        nginx -t 2>&1 | tail -5
+        print_err "Fix nginx manually — panel files are ready"
+    fi
 
-    # ── 11. SSL ───────────────────────────────────────────
+    # ── 14. SSL ───────────────────────────────────────
     if [[ "$USE_SSL" == "yes" ]]; then
         print_header "SSL (Let's Encrypt)"
         apt-get install -y certbot python3-certbot-nginx >/dev/null 2>&1
-        certbot --nginx -d "$FQDN" \
+        if certbot --nginx -d "$FQDN" \
             --non-interactive --agree-tos -m "$ADMIN_EMAIL" \
-            --redirect >/dev/null 2>&1 \
-            && print_ok "SSL certificate installed" \
-            || print_err "SSL failed — check DNS pointing to this server"
-        systemctl restart nginx >/dev/null 2>&1 || true
+            --redirect >/dev/null 2>&1; then
+            systemctl restart nginx >/dev/null 2>&1 || true
+            print_ok "SSL certificate installed"
+        else
+            print_err "SSL failed — DNS must point to this server IP"
+        fi
     fi
 
-    # ── Done ──────────────────────────────────────────────
+    # ── Done ──────────────────────────────────────────
     print_header "INSTALLATION COMPLETE"
-    echo -e "${GREEN}🎉 Panel installed!${NC}"
+    echo -e "${GREEN}🎉 Panel installed successfully!${NC}"
     echo ""
     echo -e " ${CYAN}URL         :${NC} ${GREEN}${PANEL_URL}${NC}"
     echo -e " ${CYAN}Admin User  :${NC} ${GREEN}${ADMIN_USER}${NC}"
     echo -e " ${CYAN}Admin Email :${NC} ${GREEN}${ADMIN_EMAIL}${NC}"
     echo -e " ${CYAN}DB Password :${NC} ${GREEN}${DB_PASS}${NC} ${YELLOW}← Save this!${NC}"
-    echo -e " ${CYAN}Ports Open  :${NC} ${GREEN}22, 80, 443, 8080, 2022${NC}"
+    echo -e " ${CYAN}Ports       :${NC} ${GREEN}22, 80, 443, 8080, 2022${NC}"
     echo ""
 }
 
@@ -270,7 +314,7 @@ NGINX
 # ════════════════════════════════════════════════════
 uninstall_panel() {
     clear
-    echo -e "${RED}⚠  UNINSTALL — everything removed cleanly for reinstall${NC}"
+    echo -e "${RED}⚠  UNINSTALL — clean remove for fresh reinstall${NC}"
     echo ""
     FQDN=""; DB_NAME="panel"; DB_USER="pterodactyl"
     if [ -f /etc/pterodactyl-jayanth.conf ]; then
@@ -281,18 +325,19 @@ uninstall_panel() {
         DB_USER=$(grep "^DB_USERNAME=" /var/www/pterodactyl/.env | cut -d= -f2)
         APP_URL=$(grep "^APP_URL=" /var/www/pterodactyl/.env | cut -d= -f2)
         FQDN=$(echo "$APP_URL" | sed 's|https\?://||' | sed 's|/.*||')
-        echo -e " ${CYAN}Detected from .env:${NC} FQDN=${GREEN}$FQDN${NC}  DB=${GREEN}$DB_NAME${NC}"
+        echo -e " ${CYAN}From .env:${NC} FQDN=${GREEN}$FQDN${NC}  DB=${GREEN}$DB_NAME${NC}"
     fi
-
     echo ""
-    tty_read -p "$(echo -e "${YELLOW}Type 'yes' to confirm: ${NC}")" CONFIRM
+    tty_read -p "$(echo -e "${YELLOW}Type 'yes' to confirm full uninstall: ${NC}")" CONFIRM
     [[ "$CONFIRM" != "yes" ]] && { echo -e "${GREEN}Cancelled.${NC}"; sleep 1; return; }
 
     print_header "UNINSTALLING"
     supervisorctl stop "pterodactyl-worker:*" >/dev/null 2>&1 || true
-    rm -rf /var/www/pterodactyl && print_ok "Panel files removed"
-    rm -f /etc/nginx/sites-enabled/pterodactyl.conf
-    rm -f /etc/nginx/sites-available/pterodactyl.conf
+    rm -rf /var/www/pterodactyl
+    print_ok "Panel files removed"
+    rm -f /etc/nginx/conf.d/pterodactyl.conf \
+          /etc/nginx/sites-enabled/pterodactyl.conf \
+          /etc/nginx/sites-available/pterodactyl.conf
     nginx -t >/dev/null 2>&1 && systemctl reload nginx >/dev/null 2>&1 || true
     print_ok "Nginx config removed"
     rm -f /etc/supervisor/conf.d/pterodactyl-worker.conf
@@ -306,16 +351,16 @@ DROP DATABASE IF EXISTS \`${DB_NAME}\`;
 DROP USER IF EXISTS '${DB_USER}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
-    print_ok "Database dropped (clean)"
-    if [ -n "$FQDN" ]; then
+    print_ok "Database dropped"
+    [ -n "$FQDN" ] && {
         certbot delete --cert-name "$FQDN" --non-interactive >/dev/null 2>&1 || true
         rm -rf "/etc/letsencrypt/live/${FQDN}" \
                "/etc/letsencrypt/renewal/${FQDN}.conf" 2>/dev/null || true
         print_ok "SSL certs removed"
-    fi
+    }
     rm -f /etc/pterodactyl-jayanth.conf
-    print_header "UNINSTALL COMPLETE"
-    echo -e "${GREEN}✓ Clean — ready for fresh reinstall!${NC}"
+    print_header "DONE"
+    echo -e "${GREEN}✓ Completely clean — safe to reinstall!${NC}"
     echo ""
 }
 
@@ -330,8 +375,8 @@ while true; do
     echo ""
     echo -e " ${YELLOW}SELECT AN ACTION:${NC}"
     echo -e " ${DG}──────────────────────────────────────────────────────────${NC}"
-    echo -e " ${P}[1]${NC} ${GREEN}Install Pterodactyl Panel${NC}   ${DG}:: Domain or IP + SSL${NC}"
-    echo -e " ${P}[2]${NC} ${RED}Uninstall Pterodactyl Panel${NC} ${DG}:: Clean remove for reinstall${NC}"
+    echo -e " ${P}[1]${NC} ${GREEN}Install Pterodactyl Panel${NC}   ${DG}:: Domain or IP + SSL auto${NC}"
+    echo -e " ${P}[2]${NC} ${RED}Uninstall Pterodactyl Panel${NC} ${DG}:: Clean — safe for reinstall${NC}"
     echo -e " ${DG}──────────────────────────────────────────────────────────${NC}"
     echo -e " ${P}[0]${NC} ${DG}Back to JAYANTH HUB${NC}"
     echo ""
@@ -341,6 +386,6 @@ while true; do
         1) install_panel;   pause_return ;;
         2) uninstall_panel; pause_return ;;
         0) exit 0 ;;
-        *) echo -e " ${RED}✘ Invalid.${NC}"; sleep 0.8 ;;
+        *) echo -e " ${RED}✗ Invalid.${NC}"; sleep 0.8 ;;
     esac
 done
