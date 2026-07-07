@@ -186,4 +186,3 @@ echo ""
 echo -e "${CYAN}Use helper:${NC}"
 echo -e "  wing"
 echo ""
-
