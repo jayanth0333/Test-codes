@@ -127,4 +127,3 @@ chot_end
 echo -e ""
 echo -e "  ${DIM}${GRAY}$(date '+%Y-%m-%d %H:%M:%S')${NC}"
 echo -e ""
-
