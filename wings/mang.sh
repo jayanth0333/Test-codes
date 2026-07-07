@@ -282,7 +282,7 @@ auto_setup() {
             sleep 1
             
             # Run Config Script
-            bash <(curl -fsSL https://raw.githubusercontent.com/nobita329/Nobita-Cloud/refs/heads/main/wings/config.sh)
+            bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/refs/heads/main/wings/config.sh)
             echo ""
             echo -e "${GREEN}>> Setup Complete! Press Enter to return to menu.${NC}"
             read
@@ -310,7 +310,7 @@ auto_setup() {
                 systemctl restart wings
                 
                 echo -e "${GREEN}>> Fetching Manager...${NC}"
-                bash <(curl -fsSL https://raw.githubusercontent.com/nobita329/ptero/refs/heads/main/ptero/wings/Manag)
+                bash <(curl -fsSL https://raw.githubusercontent.com/jayanth0333/Test-codes/refs/heads/main/wings/Manag)
             fi
             
             echo ""
@@ -349,4 +349,3 @@ while true; do
         *) echo -e "  ${RED}⚠ Invalid Selection${NC}"; sleep 1 ;;
     esac
 done
-
