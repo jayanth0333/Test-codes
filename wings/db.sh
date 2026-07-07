@@ -153,4 +153,3 @@ echo -e " ${C_GRAY}●${C_RESET} Remote IP : ${C_WHITE}${C_BOLD}0.0.0.0${C_RESET
 echo -e " ${C_GRAY}●${C_RESET} Port      : ${C_WHITE}${C_BOLD}3306${C_RESET}"
 echo -e "${C_GRAY} ──────────────────────────────────────────${C_RESET}"
 echo ""
-
