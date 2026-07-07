@@ -298,8 +298,12 @@ server {
 NGINX
     if nginx -t >/dev/null 2>&1; then
         systemctl restart nginx >/dev/null 2>&1
-        print_ok "Nginx configured and running"
-    else
+        sleep 2
+        if systemctl is-active --quiet nginx; then
+            print_ok "Nginx configured and running"
+        else
+            print_err "Nginx running failed — try: systemctl start nginx"
+        fi
         echo -e "${RED}Nginx error:${NC}"
         nginx -t 2>&1 | tail -5
         print_err "Fix nginx manually — panel files are ready"
