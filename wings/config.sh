@@ -284,4 +284,3 @@ else
     echo -e "  ${RED}Check logs: journalctl -u wings -n 20${NC}"
     exit 1
 fi
-
