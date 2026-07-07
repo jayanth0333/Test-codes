@@ -1,9 +1,5 @@
 #!/bin/bash
-# set -euo pipefail — removed for stability
-
-# Fix stdin for bash process substitution
-tty_read() { read "$@" < /dev/tty; }
-
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
